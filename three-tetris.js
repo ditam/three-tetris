@@ -56,8 +56,38 @@ var model = {
   ]
 };
 
+document.onkeypress = function(event) {
+  switch (event.code) {
+    case 'KeyW':
+      console.warn('ROTATE not implemented');
+      break;
+    case 'KeyA':
+      rotateBoard('left');
+      break;
+    case 'KeyS':
+      console.warn('DROP not implemented');
+      break;
+    case 'KeyD':
+      rotateBoard('right');
+      break;
+  }
+};
+
+
 var sliceAngle = Math.PI*2 / CONSTANTS.SEGMENT_COUNT;
 
+function rotateBoard(direction) {
+  switch (direction) {
+    case 'left':
+      scene.rotation.z += sliceAngle;
+      break;
+    case 'right':
+      scene.rotation.z -= sliceAngle;
+      break;
+    default:
+      console.error('unknown direction ',direction);
+  }
+}
 //TODO: describe geometry
 // 8 points total, 4-4 on outer and inner rectangular face
 function constructSliceGeometry(lineIndex, segmentIndex) {
