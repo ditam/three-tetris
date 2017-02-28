@@ -2,18 +2,65 @@
 var scene, camera, renderer;
 
 var CONSTANTS = Object.freeze({
-   INNER_RADIUS: 200,
-   OUTER_RADIUS: 300,
-   BLOCK_HEIGHT: 50,
-   SEGMENT_COUNT: 12,
-   LINE_HEIGHT: 50
+ INNER_RADIUS: 200,
+ OUTER_RADIUS: 300,
+ BLOCK_HEIGHT: 50,
+ SEGMENT_COUNT: 12,
+ LINE_HEIGHT: 50
 });
+
+var MATERIALS = Object.freeze({
+  RED: new THREE.MeshPhongMaterial({
+    color: 0xcc0015,
+    emissive: 0x402030,
+    side: THREE.DoubleSide,
+    shading: THREE.FlatShading
+  }),
+  BLUE: new THREE.MeshPhongMaterial({
+    color: 0x156289,
+    emissive: 0x072534,
+    side: THREE.DoubleSide,
+    shading: THREE.FlatShading
+  }),
+  GREEN: new THREE.MeshPhongMaterial({
+    color: 0x158950,
+    emissive: 0x078820,
+    side: THREE.DoubleSide,
+    shading: THREE.FlatShading
+  })
+});
+
+var model = {
+  blocks: [ // A 2D matrix of CONSTANTS.SEGMENT_COUNT long rows
+    [
+      undefined,
+      undefined,
+      {
+        material: MATERIALS.RED
+      },
+      {
+        material: MATERIALS.BLUE
+      },
+      undefined,
+      {
+        material: MATERIALS.BLUE
+      }
+    ],
+    [
+      undefined,
+      undefined,
+      {
+        material: MATERIALS.GREEN
+      }
+    ]
+  ]
+};
 
 var sliceAngle = Math.PI*2 / CONSTANTS.SEGMENT_COUNT;
 
 //TODO: describe geometry
 // 8 points total, 4-4 on outer and inner rectangular face
-function constructSliceGeometry(segmentIndex) {
+function constructSliceGeometry(lineIndex, segmentIndex) {
   var points = [];
 
   var angle1 = sliceAngle * segmentIndex;
@@ -31,15 +78,18 @@ function constructSliceGeometry(segmentIndex) {
   var x1_inner = Math.cos(angle2) * CONSTANTS.INNER_RADIUS;
   var y1_inner = Math.sin(angle2) * CONSTANTS.INNER_RADIUS;
 
-  points.push( new THREE.Vector3(x0_outer, y0_outer, 0) );
-  points.push( new THREE.Vector3(x1_outer, y1_outer, 0) );
-  points.push( new THREE.Vector3(x0_inner, y0_inner, 0) );
-  points.push( new THREE.Vector3(x1_inner, y1_inner, 0) );
+  var z0 = lineIndex*CONSTANTS.LINE_HEIGHT;
+  var z1 = (lineIndex+1)*CONSTANTS.LINE_HEIGHT;
 
-  points.push( new THREE.Vector3(x0_outer, y0_outer, CONSTANTS.LINE_HEIGHT) );
-  points.push( new THREE.Vector3(x1_outer, y1_outer, CONSTANTS.LINE_HEIGHT) );
-  points.push( new THREE.Vector3(x0_inner, y0_inner, CONSTANTS.LINE_HEIGHT) );
-  points.push( new THREE.Vector3(x1_inner, y1_inner, CONSTANTS.LINE_HEIGHT) );
+  points.push( new THREE.Vector3(x0_outer, y0_outer, z0) );
+  points.push( new THREE.Vector3(x1_outer, y1_outer, z0) );
+  points.push( new THREE.Vector3(x0_inner, y0_inner, z0) );
+  points.push( new THREE.Vector3(x1_inner, y1_inner, z0) );
+
+  points.push( new THREE.Vector3(x0_outer, y0_outer, z1) );
+  points.push( new THREE.Vector3(x1_outer, y1_outer, z1) );
+  points.push( new THREE.Vector3(x0_inner, y0_inner, z1) );
+  points.push( new THREE.Vector3(x1_inner, y1_inner, z1) );
 
   return new THREE.ConvexGeometry(points);
 }
@@ -50,19 +100,15 @@ function init() {
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
   camera.position.z = 1000;
 
-  var material = new THREE.MeshPhongMaterial({
-    color: 0x156289,
-    emissive: 0x072534,
-    side: THREE.DoubleSide,
-    shading: THREE.FlatShading
-  });
-
-  for(var i=0;i<CONSTANTS.SEGMENT_COUNT;i++) {
-    if(i%2){
-      var geometry = constructSliceGeometry(i);
-      var mesh = new THREE.Mesh( geometry, material );
-      mesh.position.set( 0, 0, 0 );
-      scene.add( mesh );
+  for(var rowIndex = 0; rowIndex < model.blocks.length; rowIndex++){
+    for(var colIndex = 0; colIndex < model.blocks[rowIndex].length; colIndex++){
+      var block = model.blocks[rowIndex][colIndex];
+      if (block) {
+        var geometry = constructSliceGeometry(rowIndex, colIndex);
+        var mesh = new THREE.Mesh( geometry, block.material );
+        mesh.position.set( 0, 0, 0 );
+        scene.add( mesh );
+      }
     }
   }
 
