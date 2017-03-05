@@ -50,14 +50,11 @@ var freeBlockPosition = {
 };
 
 function addNewBlock(){
-  var startRow = CONSTANTS.NEW_BLOCK_ROW;
-  var startCol = CONSTANTS.NEW_BLOCK_COL;
-  var block = {
+  model.freeBlock = {
+    row: CONSTANTS.NEW_BLOCK_ROW,
+    col: CONSTANTS.NEW_BLOCK_COL,
     material: getRandomMaterial()
   };
-
-  //TODO: assert empty
-  model.blocks[startRow][startCol] = block;
   regenerateMeshes();
 }
 
@@ -113,17 +110,10 @@ document.onkeypress = function(event) {
   }
 };
 
-// TODO: clear up board and blocks terminology
+// TODO: clear up terminology (board/blocks mixup, freeblock is actually going to be multiple blocks)
 function dropByOne() {
-  // get block
-  var freeBlock = model.blocks[freeBlockPosition.row][freeBlockPosition.col];
-  // remove from board
-  delete model.blocks[freeBlockPosition.row][freeBlockPosition.col];
-  // drop position by one row
-  freeBlockPosition.row -= 1;
-  // add to model in new position -- TODO: this might be a good place for collision detection
-  model.blocks[freeBlockPosition.row][freeBlockPosition.col] = freeBlock;
-
+  model.freeBlock.row = Math.max(0, model.freeBlock.row-1);
+  // TODO: check collision with fixed blocks, merge if necessary
   regenerateMeshes();
 }
 
@@ -190,18 +180,32 @@ function regenerateMeshes() {
   });
   currentMeshes = [];
 
+  function generateMeshAtPosition(material, row, col, isFree) {
+    var geometry = constructSliceGeometry(row, col);
+    var mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(0, 0, 0);
+    if (!isFree) {
+      mesh.rotation.z = baseRotation * sliceAngle;
+    }
+    return mesh;
+  }
+
+  // generate meshes for base blocks
   for(var rowIndex = 0; rowIndex < model.blocks.length; rowIndex++){
     for(var colIndex = 0; colIndex < model.blocks[rowIndex].length; colIndex++){
       var block = model.blocks[rowIndex][colIndex];
       if (block) {
         console.log('adding mesh at ',rowIndex,colIndex);
-        var geometry = constructSliceGeometry(rowIndex, colIndex);
-        var mesh = new THREE.Mesh( geometry, block.material );
-        mesh.position.set( 0, 0, 0 );
-        mesh.rotation.z = baseRotation * sliceAngle;
-        currentMeshes.push( mesh );
+        var mesh = generateMeshAtPosition(block.material, rowIndex, colIndex)
+        currentMeshes.push(mesh);
       }
     }
+  }
+
+  // generate mesh for free block
+  if (model.freeBlock) {
+    var freeBlockMesh = generateMeshAtPosition(model.freeBlock.material, model.freeBlock.row, model.freeBlock.col, true);
+    currentMeshes.push(freeBlockMesh);
   }
 
   currentMeshes.forEach(function(mesh){
@@ -213,7 +217,7 @@ function init() { // TODO: extract constants
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-  camera.position.z = 400;
+  camera.position.z = 500;
   camera.position.y = -1000;
 
   regenerateMeshes();
