@@ -11,6 +11,8 @@ var CONSTANTS = Object.freeze({
  LINE_HEIGHT: 50
 });
 
+var baseRotation = 0; // should stay in [0,CONSTANTS.SEGMENT_COUNT]
+
 function getRandomInt(min, max) { // both ends inclusive
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -130,10 +132,12 @@ var sliceAngle = Math.PI*2 / CONSTANTS.SEGMENT_COUNT;
 function rotateBoard(direction) {
   switch (direction) {
     case 'left':
-      scene.rotation.z += sliceAngle;
+      baseRotation = (baseRotation-1) % CONSTANTS.SEGMENT_COUNT;
+      regenerateMeshes();
       break;
     case 'right':
-      scene.rotation.z -= sliceAngle;
+      baseRotation = (baseRotation+1) % CONSTANTS.SEGMENT_COUNT;
+      regenerateMeshes();
       break;
     default:
       console.error('unknown direction ',direction);
@@ -194,6 +198,7 @@ function regenerateMeshes() {
         var geometry = constructSliceGeometry(rowIndex, colIndex);
         var mesh = new THREE.Mesh( geometry, block.material );
         mesh.position.set( 0, 0, 0 );
+        mesh.rotation.z = baseRotation * sliceAngle;
         currentMeshes.push( mesh );
       }
     }
