@@ -1,5 +1,5 @@
 'use strict';
-var scene, camera, renderer;
+var scene, camera, renderer, stats;
 
 var CONSTANTS = Object.freeze({
  INNER_RADIUS: 200,
@@ -244,15 +244,35 @@ function init() { // TODO: extract constants
   var orbit = new THREE.OrbitControls( camera, renderer.domElement );
 	orbit.enableZoom = false;
 
+  // rotate to bring the free block to front
+  // TODO: technically, this should be based on CONSTANTS.NEW_BLOCK_COL
+  scene.rotation.z = -Math.PI/2-sliceAngle/2;
+
+  stats = new Stats();
+  stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+  document.body.appendChild( stats.dom );
+
   document.getElementById('main-renderer-target').appendChild( renderer.domElement );
 }
 
+var gameTime = 0;
 function animate() {
-  requestAnimationFrame( animate );
+  stats.begin();
 
-  scene.rotation.z += 0.001;
+  // TODO: should this be tied to animation frames or real time instead?
+  gameTime++;
+  if ( !(gameTime%300) ) {
+    dropByOne();
+  }
 
-  renderer.render( scene, camera );
+  // auto-rotation
+  // scene.rotation.z += 0.001;
+
+  renderer.render(scene, camera);
+
+  stats.end();
+
+  requestAnimationFrame(animate);
 }
 
 init();
