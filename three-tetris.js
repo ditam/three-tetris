@@ -11,12 +11,6 @@ var CONSTANTS = Object.freeze({
  LINE_HEIGHT: 50
 });
 
-var baseRotation = 0; // should stay in [0,CONSTANTS.SEGMENT_COUNT]
-
-function getRandomInt(min, max) { // both ends inclusive
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 var MATERIALS = Object.freeze({
   RED: new THREE.MeshPhongMaterial({
     color: 0xcc0015,
@@ -38,26 +32,10 @@ var MATERIALS = Object.freeze({
   })
 });
 
-function getRandomMaterial(){
-  var materialKeys = Object.keys(MATERIALS);
-  var randomKey = materialKeys[getRandomInt(0,materialKeys.length-1)];
-  return MATERIALS[randomKey];
-}
-
-var freeBlockPosition = {
-  row: CONSTANTS.NEW_BLOCK_ROW,
-  col: CONSTANTS.NEW_BLOCK_COL
-};
-
-function addNewBlock(){
-  model.freeBlock = {
-    row: CONSTANTS.NEW_BLOCK_ROW,
-    col: CONSTANTS.NEW_BLOCK_COL,
-    material: getRandomMaterial()
-  };
-  regenerateMeshes();
-}
-
+var baseRotation = 0; // should stay in [0,CONSTANTS.SEGMENT_COUNT]
+var sliceAngle = Math.PI*2 / CONSTANTS.SEGMENT_COUNT;
+var currentMeshes = [];
+var gameTime = 0;
 var model = {
   blocks: [ // A 2D matrix of CONSTANTS.SEGMENT_COUNT long rows
     [ // row 0
@@ -92,6 +70,25 @@ var model = {
   ]
 };
 
+function getRandomInt(min, max) { // both ends inclusive
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomMaterial(){
+  var materialKeys = Object.keys(MATERIALS);
+  var randomKey = materialKeys[getRandomInt(0,materialKeys.length-1)];
+  return MATERIALS[randomKey];
+}
+
+function addNewBlock(){
+  model.freeBlock = {
+    row: CONSTANTS.NEW_BLOCK_ROW,
+    col: CONSTANTS.NEW_BLOCK_COL,
+    material: getRandomMaterial()
+  };
+  regenerateMeshes();
+}
+
 document.onkeypress = function(event) {
   switch (event.code) {
     case 'KeyW':
@@ -116,8 +113,6 @@ function dropByOne() {
   // TODO: check collision with fixed blocks, merge if necessary
   regenerateMeshes();
 }
-
-var sliceAngle = Math.PI*2 / CONSTANTS.SEGMENT_COUNT;
 
 function rotateBoard(direction) {
   switch (direction) {
@@ -169,7 +164,6 @@ function constructSliceGeometry(lineIndex, segmentIndex) {
   return new THREE.ConvexGeometry(points);
 }
 
-var currentMeshes = [];
 
 // This is far from optimal (we could probably just move the meshes, or only regenerate those that changed), but it'll do for now.
 function regenerateMeshes() {
@@ -248,6 +242,7 @@ function init() { // TODO: extract constants
   // TODO: technically, this should be based on CONSTANTS.NEW_BLOCK_COL
   scene.rotation.z = -Math.PI/2-sliceAngle/2;
 
+  // Add FPS meter
   stats = new Stats();
   stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
   document.body.appendChild( stats.dom );
@@ -255,13 +250,12 @@ function init() { // TODO: extract constants
   document.getElementById('main-renderer-target').appendChild( renderer.domElement );
 }
 
-var gameTime = 0;
 function animate() {
   stats.begin();
 
   // TODO: should this be tied to animation frames or real time instead?
   gameTime++;
-  if ( !(gameTime%300) ) {
+  if ( !(gameTime%100) ) {
     dropByOne();
   }
 
