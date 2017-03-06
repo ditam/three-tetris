@@ -95,39 +95,55 @@ document.onkeypress = function(event) {
       console.warn('ROTATE not implemented');
       break;
     case 'KeyA':
-      rotateBoard('left');
+      move('left');
       break;
     case 'KeyS':
-      dropByOne();
+      move('down');
       // TODO: add collision detection and merging of freeblock+blocks
       break;
     case 'KeyD':
-      rotateBoard('right');
+      move('right');
       break;
   }
 };
 
 // TODO: clear up terminology (board/blocks mixup, freeblock is actually going to be multiple blocks)
-function dropByOne() {
-  model.freeBlock.row = Math.max(0, model.freeBlock.row-1);
-  // TODO: check collision with fixed blocks, merge if necessary
-  regenerateMeshes();
-}
-
-function rotateBoard(direction) {
+function move(direction) {
   switch (direction) {
+    // Instead of moving the board coordinates, we counter-rotate the free block accordingly.
+    // This is so that the free block remains in the center of the screen.
     case 'left':
       baseRotation = (baseRotation-1) % CONSTANTS.SEGMENT_COUNT;
-      regenerateMeshes();
+      model.freeBlock.col = (model.freeBlock.col+1) % CONSTANTS.SEGMENT_COUNT;
       break;
     case 'right':
       baseRotation = (baseRotation+1) % CONSTANTS.SEGMENT_COUNT;
-      regenerateMeshes();
+      model.freeBlock.col = model.freeBlock.col > 0? (model.freeBlock.col-1) % CONSTANTS.SEGMENT_COUNT : CONSTANTS.SEGMENT_COUNT-1;
+      break;
+    case 'down':
+      model.freeBlock.row = Math.max(0, model.freeBlock.row-1);
+      // TODO: check collision with fixed blocks, merge if necessary
       break;
     default:
       console.error('unknown direction ',direction);
   }
+  checkCollision();
+  regenerateMeshes();
 }
+
+function checkCollision() {
+  var collision = false;
+
+  console.log('freeBlock at',model.freeBlock.row,model.freeBlock.col);
+
+  if(model.blocks[model.freeBlock.row][model.freeBlock.col]) {
+    collision = true;
+  }
+
+  console.log('collision: ',collision);
+  return collision;
+}
+
 //TODO: describe geometry
 // 8 points total, 4-4 on outer and inner rectangular face
 function constructSliceGeometry(lineIndex, segmentIndex) {
@@ -167,20 +183,16 @@ function constructSliceGeometry(lineIndex, segmentIndex) {
 
 // This is far from optimal (we could probably just move the meshes, or only regenerate those that changed), but it'll do for now.
 function regenerateMeshes() {
-  console.log('regenerating meshes. Current model:',model.blocks);
-
   currentMeshes.forEach(function(mesh){
     scene.remove(mesh);
   });
   currentMeshes = [];
 
-  function generateMeshAtPosition(material, row, col, isFree) {
+  function generateMeshAtPosition(material, row, col) {
     var geometry = constructSliceGeometry(row, col);
     var mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(0, 0, 0);
-    if (!isFree) {
-      mesh.rotation.z = baseRotation * sliceAngle;
-    }
+    mesh.rotation.z = baseRotation * sliceAngle;
     return mesh;
   }
 
@@ -189,7 +201,6 @@ function regenerateMeshes() {
     for(var colIndex = 0; colIndex < model.blocks[rowIndex].length; colIndex++){
       var block = model.blocks[rowIndex][colIndex];
       if (block) {
-        console.log('adding mesh at ',rowIndex,colIndex);
         var mesh = generateMeshAtPosition(block.material, rowIndex, colIndex)
         currentMeshes.push(mesh);
       }
@@ -198,7 +209,7 @@ function regenerateMeshes() {
 
   // generate mesh for free block
   if (model.freeBlock) {
-    var freeBlockMesh = generateMeshAtPosition(model.freeBlock.material, model.freeBlock.row, model.freeBlock.col, true);
+    var freeBlockMesh = generateMeshAtPosition(model.freeBlock.material, model.freeBlock.row, model.freeBlock.col);
     currentMeshes.push(freeBlockMesh);
   }
 
@@ -256,7 +267,7 @@ function animate() {
   // TODO: should this be tied to animation frames or real time instead?
   gameTime++;
   if ( !(gameTime%100) ) {
-    dropByOne();
+    move('down');
   }
 
   // auto-rotation
