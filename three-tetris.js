@@ -32,8 +32,8 @@ var MATERIALS = Object.freeze({
   })
 });
 
-var baseRotation = 0; // should stay in [0,CONSTANTS.SEGMENT_COUNT]
-var sliceAngle = Math.PI*2 / CONSTANTS.SEGMENT_COUNT;
+var baseRotation = 0; // should stay in [0, CONSTANTS.SEGMENT_COUNT]
+var sliceAngle = Math.PI * 2 / CONSTANTS.SEGMENT_COUNT;
 var currentMeshes = [];
 var gameTime = 0;
 var model = {
@@ -76,7 +76,7 @@ function getRandomInt(min, max) { // both ends inclusive
 
 function getRandomMaterial(){
   var materialKeys = Object.keys(MATERIALS);
-  var randomKey = materialKeys[getRandomInt(0,materialKeys.length-1)];
+  var randomKey = materialKeys[getRandomInt(0, materialKeys.length - 1)];
   return MATERIALS[randomKey];
 }
 
@@ -113,19 +113,19 @@ function move(direction) {
     // Instead of moving the board coordinates, we counter-rotate the free block accordingly.
     // This is so that the free block remains in the center of the screen.
     case 'left':
-      baseRotation = (baseRotation-1) % CONSTANTS.SEGMENT_COUNT;
-      model.freeBlock.col = (model.freeBlock.col+1) % CONSTANTS.SEGMENT_COUNT;
+      baseRotation = (baseRotation - 1) % CONSTANTS.SEGMENT_COUNT;
+      model.freeBlock.col = (model.freeBlock.col + 1) % CONSTANTS.SEGMENT_COUNT;
       break;
     case 'right':
-      baseRotation = (baseRotation+1) % CONSTANTS.SEGMENT_COUNT;
-      model.freeBlock.col = model.freeBlock.col > 0? (model.freeBlock.col-1) % CONSTANTS.SEGMENT_COUNT : CONSTANTS.SEGMENT_COUNT-1;
+      baseRotation = (baseRotation + 1) % CONSTANTS.SEGMENT_COUNT;
+      model.freeBlock.col = model.freeBlock.col > 0? (model.freeBlock.col - 1) % CONSTANTS.SEGMENT_COUNT : CONSTANTS.SEGMENT_COUNT - 1;
       break;
     case 'down':
-      model.freeBlock.row = Math.max(0, model.freeBlock.row-1);
+      model.freeBlock.row = Math.max(0, model.freeBlock.row - 1);
       // TODO: check collision with fixed blocks, merge if necessary
       break;
     default:
-      console.error('unknown direction ',direction);
+      console.error('unknown direction ', direction);
   }
   checkCollision();
   regenerateMeshes();
@@ -134,18 +134,17 @@ function move(direction) {
 function checkCollision() {
   var collision = false;
 
-  console.log('freeBlock at',model.freeBlock.row,model.freeBlock.col);
+  console.log('freeBlock at', model.freeBlock.row, model.freeBlock.col);
 
   if(model.blocks[model.freeBlock.row][model.freeBlock.col]) {
     collision = true;
   }
 
-  console.log('collision: ',collision);
+  console.log('collision: ', collision);
   return collision;
 }
 
-//TODO: describe geometry
-// 8 points total, 4-4 on outer and inner rectangular face
+// Slice geometry: 8 points total, 4-4 on outer and inner rectangular face
 function constructSliceGeometry(lineIndex, segmentIndex) {
   var points = [];
 
@@ -164,18 +163,18 @@ function constructSliceGeometry(lineIndex, segmentIndex) {
   var x1_inner = Math.cos(angle2) * CONSTANTS.INNER_RADIUS;
   var y1_inner = Math.sin(angle2) * CONSTANTS.INNER_RADIUS;
 
-  var z0 = lineIndex*CONSTANTS.LINE_HEIGHT;
-  var z1 = (lineIndex+1)*CONSTANTS.LINE_HEIGHT;
+  var z0 = lineIndex * CONSTANTS.LINE_HEIGHT;
+  var z1 = (lineIndex + 1) * CONSTANTS.LINE_HEIGHT;
 
-  points.push( new THREE.Vector3(x0_outer, y0_outer, z0) );
-  points.push( new THREE.Vector3(x1_outer, y1_outer, z0) );
-  points.push( new THREE.Vector3(x0_inner, y0_inner, z0) );
-  points.push( new THREE.Vector3(x1_inner, y1_inner, z0) );
+  points.push(new THREE.Vector3(x0_outer, y0_outer, z0));
+  points.push(new THREE.Vector3(x1_outer, y1_outer, z0));
+  points.push(new THREE.Vector3(x0_inner, y0_inner, z0));
+  points.push(new THREE.Vector3(x1_inner, y1_inner, z0));
 
-  points.push( new THREE.Vector3(x0_outer, y0_outer, z1) );
-  points.push( new THREE.Vector3(x1_outer, y1_outer, z1) );
-  points.push( new THREE.Vector3(x0_inner, y0_inner, z1) );
-  points.push( new THREE.Vector3(x1_inner, y1_inner, z1) );
+  points.push(new THREE.Vector3(x0_outer, y0_outer, z1));
+  points.push(new THREE.Vector3(x1_outer, y1_outer, z1));
+  points.push(new THREE.Vector3(x0_inner, y0_inner, z1));
+  points.push(new THREE.Vector3(x1_inner, y1_inner, z1));
 
   return new THREE.ConvexGeometry(points);
 }
@@ -218,35 +217,35 @@ function regenerateMeshes() {
   });
 }
 
-function init() { // TODO: extract constants
+// TODO: extract constants
+function init() {
   scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
   camera.position.z = 500;
   camera.position.y = -1000;
 
   regenerateMeshes();
 
   var lights = [];
-  lights[ 0 ] = new THREE.PointLight( 0xffffff );
-  lights[ 1 ] = new THREE.PointLight( 0xffffff );
-  lights[ 2 ] = new THREE.PointLight( 0xffffff );
+  lights[0] = new THREE.PointLight(0xffffff);
+  lights[1] = new THREE.PointLight(0xffffff);
+  lights[2] = new THREE.PointLight(0xffffff);
 
-  lights[ 0 ].position.set( 0, 500, 0 );
-  lights[ 1 ].position.set( 200, 500, 200 );
-  lights[ 2 ].position.set( -200, -500, -200 );
+  lights[0].position.set(0, 500, 0);
+  lights[1].position.set(200, 500, 200);
+  lights[2].position.set(-200, -500, -200);
 
-  scene.add( lights[ 0 ] );
-  scene.add( lights[ 1 ] );
-  scene.add( lights[ 2 ] );
+  scene.add(lights[0]);
+  scene.add(lights[1]);
+  scene.add(lights[2]);
 
-  // X red, Y green, Z blue
-  scene.add( new THREE.AxisHelper( 150 ) );
+  scene.add(new THREE.AxisHelper(150));
 
   renderer = new THREE.WebGLRenderer();
-  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-  var orbit = new THREE.OrbitControls( camera, renderer.domElement );
+  var orbit = new THREE.OrbitControls(camera, renderer.domElement);
 	orbit.enableZoom = false;
 
   // rotate to bring the free block to front
@@ -256,27 +255,22 @@ function init() { // TODO: extract constants
   // Add FPS meter
   stats = new Stats();
   stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-  document.body.appendChild( stats.dom );
+  document.body.appendChild(stats.dom);
 
-  document.getElementById('main-renderer-target').appendChild( renderer.domElement );
+  document.getElementById('main-renderer-target').appendChild(renderer.domElement);
 }
 
 function animate() {
   stats.begin();
-
   // TODO: should this be tied to animation frames or real time instead?
   gameTime++;
-  if ( !(gameTime%100) ) {
+  if (!(gameTime%100)) {
     move('down');
   }
-
-  // auto-rotation
+  // uncomment to enable auto-rotation
   // scene.rotation.z += 0.001;
-
   renderer.render(scene, camera);
-
   stats.end();
-
   requestAnimationFrame(animate);
 }
 
